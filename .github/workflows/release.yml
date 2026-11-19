@@ -1,0 +1,76 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Verify version matches tag
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(uv run python -c "import rbk; print(rbk.__version__)")
+          if [ "$tag" != "$version" ]; then
+            echo "tag $tag does not match rbk.__version__ $version" >&2
+            exit 1
+          fi
+
+      - name: Test and lint
+        run: |
+          uv sync --locked
+          uv run ruff check .
+          uv run pytest -q
+
+      - name: Build
+        run: uv build
+
+      - name: Checksum source archive
+        id: sha
+        run: |
+          url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
+          curl -fsSL "$url" -o source.tar.gz
+          sha=$(shasum -a 256 source.tar.gz | cut -d' ' -f1)
+          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "rbk $GITHUB_REF_NAME" \
+            --generate-notes
+
+      - name: Update Homebrew formula
+        env:
+          SHA256: ${{ steps.sha.outputs.sha256 }}
+          URL: ${{ steps.sha.outputs.url }}
+        run: |
+          sed -i.bak -E \
+            -e "s|^  url \".*\"$|  url \"${URL}\"|" \
+            -e "s|^  sha256 \".*\"$|  sha256 \"${SHA256}\"|" \
+            Formula/rbk.rb
+          rm -f Formula/rbk.rb.bak
+
+      - name: Open formula bump PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: bump Homebrew formula to ${{ github.ref_name }}"
+          title: "chore: bump Homebrew formula to ${{ github.ref_name }}"
+          branch: formula/${{ github.ref_name }}
+          body: |
+            Automated formula bump for `${{ github.ref_name }}`.
+
+            - url: ${{ steps.sha.outputs.url }}
+            - sha256: `${{ steps.sha.outputs.sha256 }}`

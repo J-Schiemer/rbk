@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "rbk"
+version = "0.1.0"
+description = "Lightweight, Git-native CLI runbook runner over plain OpenSSH"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Johannes Schiemer" }]
+keywords = ["runbook", "homelab", "ssh", "yaml", "cli", "automation"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: System Administrators",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: System :: Systems Administration",
+]
+dependencies = ["pyyaml>=6.0"]
+
+[project.scripts]
+rbk = "rbk.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/J-Schiemer/rbk"
+Repository = "https://github.com/J-Schiemer/rbk"
+Issues = "https://github.com/J-Schiemer/rbk/issues"
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rbk"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

@@ -1,0 +1,21 @@
+# Local-only design docs (the SRS lives here, not in SCM)
+.docs/
+
+# Editor / agent session state
+.commandcode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+
+# rbk runtime artifacts
+.rbk-history.jsonl
+
+# OS
+.DS_Store
