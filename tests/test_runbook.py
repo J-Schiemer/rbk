@@ -191,7 +191,11 @@ steps:
       x: include
 """,
     )
-    write(runbooks, "child", "name: Child\nvars:\n  x: child\nsteps:\n  - name: show\n    run: echo {{ x }}\n")
+    write(
+        runbooks,
+        "child",
+        "name: Child\nvars:\n  x: child\nsteps:\n  - name: show\n    run: echo {{ x }}\n",
+    )
     assert resolve_plan("main", runbooks)[0].command == "echo include"
     assert resolve_plan("main", runbooks, cli_vars={"x": "cli"})[0].command == "echo cli"
 

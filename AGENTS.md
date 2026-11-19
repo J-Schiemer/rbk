@@ -33,10 +33,11 @@ uv sync                     # create the venv and install deps
 uv run rbk --version        # run the CLI from source
 uv run pytest -q            # tests
 uv run ruff check .         # lint
+uv run ruff format --check .  # formatting
 uv build                    # sdist + wheel into dist/
 ```
 
-Run `ruff` and `pytest` before considering work done; CI runs exactly these.
+Run `ruff check`, `ruff format --check`, and `pytest` before considering work done; CI runs exactly these.
 
 ## Conventions
 
