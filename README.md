@@ -35,7 +35,7 @@ uv tool install git+https://github.com/J-Schiemer/rbk
 
 ## Quickstart
 
-The target workflow once the engine lands. Right now `rbk list`, `run`, and `record` exit with "not implemented yet" — see [Status](#status).
+The target workflow once the engine lands. Right now `rbk list` and `rbk record` work; `rbk run` exits with "not implemented yet" — see [Status](#status).
 
 Create a runbook workspace anywhere:
 
@@ -98,7 +98,7 @@ Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plai
 
 ## Status
 
-This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`, and the interactive session recorder in `src/rbk/recorder.py`. The execution engine, `rbk list`, and workspace discovery are not implemented yet. Unimplemented subcommands exit non-zero with a clear message.
+This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`, the interactive session recorder in `src/rbk/recorder.py`, and workspace discovery (`--dir`, `$RBK_DIR`, upward walk) plus `rbk list` in `src/rbk/workspace.py` and `src/rbk/cli.py`. The execution engine is not implemented yet, so `rbk run` exits non-zero with a clear message.
 
 ## Contributing
 

@@ -138,6 +138,16 @@ def load_runbook(path: str | Path) -> Runbook:
     )
 
 
+def list_runbooks(runbooks_dir: str | Path) -> list[Runbook]:
+    """Top-level runbooks, sorted by filename, hiding ``_``-prefixed fragments."""
+    root = Path(runbooks_dir)
+    paths: dict[str, Path] = {}
+    for path in (*sorted(root.glob("*.yaml")), *sorted(root.glob("*.yml"))):
+        if not path.stem.startswith("_"):
+            paths.setdefault(path.stem, path)
+    return [load_runbook(paths[stem]) for stem in sorted(paths)]
+
+
 def interpolate(text: str, variables: Mapping[str, str]) -> str:
     """Replace ``{{ name }}`` tokens, including ``{{ env.NAME }}`` lookups."""
 

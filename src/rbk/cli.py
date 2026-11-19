@@ -1,15 +1,15 @@
 """rbk command-line interface.
 
-This module owns argument parsing and dispatch only. The execution engine
-(run) and workspace discovery are not implemented yet; those subcommands exit
-with a clear message. The interactive recorder lives in ``rbk.recorder``.
+This module owns argument parsing and dispatch only. Workspace discovery lives
+in ``rbk.workspace``, the execution engine is not implemented yet, and the
+interactive recorder lives in ``rbk.recorder``.
 
 * ``rbk list``   — top-level runbooks, hiding ``_``-prefixed fragments
 * ``rbk run``    — resolve includes/vars, then stream commands locally or over SSH
 * ``rbk record`` — capture an interactive shell session into a YAML runbook
 
 Workspace discovery order: ``--dir`` > ``$RBK_DIR`` > nearest parent directory
-containing ``runbooks/`` or ``inventory.yaml``.
+containing ``runbooks/``.
 """
 
 from __future__ import annotations
@@ -21,12 +21,40 @@ from pathlib import Path
 
 from rbk import __version__
 from rbk.recorder import record
-from rbk.runbook import RunbookError
+from rbk.runbook import RunbookError, list_runbooks
+from rbk.workspace import find_workspace
 
 
 def _not_implemented(command: str) -> int:
     print(f"rbk {command}: not implemented yet", file=sys.stderr)
     return 2
+
+
+def _cmd_list(args: argparse.Namespace) -> int:
+    try:
+        runbooks_dir = find_workspace(args.dir)
+        runbooks = list_runbooks(runbooks_dir)
+    except RunbookError as exc:
+        print(f"rbk list: {exc}", file=sys.stderr)
+        return 1
+
+    if not runbooks:
+        print(f"No runbooks found in {runbooks_dir}")
+        return 0
+
+    width = max(len(runbook.path.stem) for runbook in runbooks)
+    for runbook in runbooks:
+        description = f" — {runbook.description}" if runbook.description else ""
+        print(f"{runbook.path.stem:<{width}}  {runbook.name}{description}")
+    return 0
+
+
+def _cmd_record(args: argparse.Namespace) -> int:
+    try:
+        return record(args.title, args.output, args.host)
+    except (RunbookError, OSError) as exc:
+        print(f"rbk record: {exc}", file=sys.stderr)
+        return 1
 
 
 def _parse_var(raw: str) -> tuple[str, str]:
@@ -45,7 +73,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--dir",
         metavar="PATH",
-        help="runbook workspace directory (overrides $RBK_DIR and discovery)",
+        help="workspace directory, before the subcommand (overrides $RBK_DIR and discovery)",
     )
     subparsers = parser.add_subparsers(dest="command", metavar="<command>")
 
@@ -85,12 +113,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command is None:
         parser.print_help()
         return 0
+    if args.command == "list":
+        return _cmd_list(args)
     if args.command == "record":
-        try:
-            return record(args.title, args.output, args.host)
-        except (RunbookError, OSError) as exc:
-            print(f"rbk record: {exc}", file=sys.stderr)
-            return 1
+        return _cmd_record(args)
     return _not_implemented(args.command)
 
 

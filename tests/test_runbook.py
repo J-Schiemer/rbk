@@ -7,6 +7,7 @@ from rbk.runbook import (
     Runbook,
     RunbookError,
     interpolate,
+    list_runbooks,
     load_runbook,
     resolve_plan,
 )
@@ -251,3 +252,36 @@ def test_include_cannot_escape_runbooks_dir(runbooks):
     write(runbooks, "main", "name: Main\nsteps:\n  - name: inc\n    include: ../evil.yaml\n")
     with pytest.raises(RunbookError, match="escapes"):
         resolve_plan("main", runbooks)
+
+
+def test_list_runbooks_hides_fragments_and_sorts(runbooks):
+    write(runbooks, "zeta", "name: Zeta\nsteps: []\n")
+    write(runbooks, "alpha", "name: Alpha\nsteps: []\n")
+    write(runbooks, "_fragment", "name: Fragment\nsteps: []\n")
+    assert [runbook.path.stem for runbook in list_runbooks(runbooks)] == ["alpha", "zeta"]
+
+
+def test_list_runbooks_includes_yml_files(runbooks):
+    (runbooks / "extra.yml").write_text("name: Extra\nsteps: []\n", encoding="utf-8")
+    assert [runbook.name for runbook in list_runbooks(runbooks)] == ["Extra"]
+
+
+def test_list_runbooks_prefers_yaml_over_yml(runbooks):
+    write(runbooks, "both", "name: FromYaml\nsteps: []\n")
+    (runbooks / "both.yml").write_text("name: FromYml\nsteps: []\n", encoding="utf-8")
+    assert [runbook.name for runbook in list_runbooks(runbooks)] == ["FromYaml"]
+
+
+def test_list_runbooks_ignores_non_yaml_files(runbooks):
+    (runbooks / "notes.md").write_text("hello", encoding="utf-8")
+    assert list_runbooks(runbooks) == []
+
+
+def test_list_runbooks_empty_directory(runbooks):
+    assert list_runbooks(runbooks) == []
+
+
+def test_list_runbooks_fails_fast_on_invalid_runbook(runbooks):
+    write(runbooks, "broken", "name: [unclosed\n")
+    with pytest.raises(RunbookError, match="broken.yaml"):
+        list_runbooks(runbooks)

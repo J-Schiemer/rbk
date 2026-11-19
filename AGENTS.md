@@ -20,7 +20,8 @@ Guidance for agents and contributors working in this repository.
 | Path | Purpose |
 | :--- | :--- |
 | `src/rbk/cli.py` | Argument parsing and command dispatch. |
-| `src/rbk/runbook.py` | YAML loading/validation, `{{ }}` interpolation, include resolution. |
+| `src/rbk/runbook.py` | YAML loading/validation, `{{ }}` interpolation, include resolution, runbook listing. |
+| `src/rbk/workspace.py` | Workspace discovery: `--dir` > `$RBK_DIR` > upward search for `runbooks/`. |
 | `src/rbk/recorder.py` | Interactive session capture, per-command triage, YAML writing. |
 | `src/rbk/__init__.py` | Version string. |
 | `tests/` | Pytest suite; CLI smoke tests live here. |
