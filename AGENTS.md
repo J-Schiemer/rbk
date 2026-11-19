@@ -20,6 +20,7 @@ Guidance for agents and contributors working in this repository.
 | Path | Purpose |
 | :--- | :--- |
 | `src/rbk/cli.py` | Argument parsing and command dispatch. |
+| `src/rbk/runbook.py` | YAML loading/validation, `{{ }}` interpolation, include resolution. |
 | `src/rbk/__init__.py` | Version string. |
 | `tests/` | Pytest suite; CLI smoke tests live here. |
 | `Formula/rbk.rb` | Homebrew tap formula (tap: `J-Schiemer/homebrew-tap`). |
@@ -45,7 +46,7 @@ Run `ruff` and `pytest` before considering work done; CI runs exactly these.
 - **Includes must detect cycles** by tracking the active call stack and aborting with a clear error.
 - **Never write secrets into runbooks.** Resolve them at runtime via `{{ env.VAR_NAME }}`.
 - **The audit log is append-only.** `.rbk-history.jsonl` is gitignored; entries are one JSON object per line with ISO-8601 timestamp, runbook, hosts, duration, status, and failing step. Do not break that shape.
-- **Variable interpolation** uses `{{ name }}`; precedence is CLI `--var` > parent `include` vars > runbook `vars` > `inventory.yaml`.
+- **Variable interpolation** uses `{{ name }}`; precedence is CLI `--var` > variables selected by the caller (parent runbook `vars` + `include` vars) > the runbook's own `vars`. There is no inventory file.
 
 ## Spec and local docs
 

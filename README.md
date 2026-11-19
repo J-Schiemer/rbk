@@ -80,7 +80,7 @@ rbk run update-immich --var host=nuc
 rbk record "Rotate TLS certs" --host web-01   # capture a session as a runbook
 ```
 
-Workspace discovery will walk up from `$PWD` looking for `runbooks/` or `inventory.yaml`, the way `git` looks for `.git/`. Override with `--dir <path>` or `RBK_DIR`.
+Workspace discovery will walk up from `$PWD` looking for a `runbooks/` directory, the way `git` looks for `.git/`. Override with `--dir <path>` or `RBK_DIR`.
 
 ## Commands
 
@@ -94,11 +94,11 @@ Workspace discovery will walk up from `$PWD` looking for `runbooks/` or `invento
 | `rbk record "<title>" --host <alias>` | Record a remote `ssh -t` session into a new runbook. |
 | `rbk --version` | Print the version. |
 
-Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. Variables resolve `{{ name }}` from CLI `--var`, then parent `include` vars, then runbook `vars`, then `inventory.yaml`. Secrets stay out of Git via `{{ env.VAR_NAME }}`.
+Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plain SSH destination (`[user@]host[:port]`) resolved by your usual OpenSSH config. Variables resolve `{{ name }}` from CLI `--var`, then variables selected by the caller (parent runbook `vars` + `include` vars), then runbook `vars`. Secrets stay out of Git via `{{ env.VAR_NAME }}`.
 
 ## Status
 
-This repository is a skeleton: the CLI surface, packaging, and CI are in place, but the execution engine, recorder, and workspace discovery are not implemented yet. Unimplemented subcommands exit non-zero with a clear message.
+This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`. The execution engine, recorder, and workspace discovery are not implemented yet. Unimplemented subcommands exit non-zero with a clear message.
 
 ## Contributing
 
