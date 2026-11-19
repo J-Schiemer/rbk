@@ -1,10 +1,8 @@
 """rbk command-line interface.
 
 This module owns argument parsing and dispatch only. The execution engine
-(run), workspace discovery, and the interactive recorder are not implemented
-yet; each subcommand currently exits with a clear message.
-
-Planned layout as the engine lands:
+(run) and workspace discovery are not implemented yet; those subcommands exit
+with a clear message. The interactive recorder lives in ``rbk.recorder``.
 
 * ``rbk list``   — top-level runbooks, hiding ``_``-prefixed fragments
 * ``rbk run``    — resolve includes/vars, then stream commands locally or over SSH
@@ -19,8 +17,11 @@ from __future__ import annotations
 import argparse
 import sys
 from collections.abc import Sequence
+from pathlib import Path
 
 from rbk import __version__
+from rbk.recorder import record
+from rbk.runbook import RunbookError
 
 
 def _not_implemented(command: str) -> int:
@@ -63,9 +64,17 @@ def build_parser() -> argparse.ArgumentParser:
         help="override a variable (repeatable)",
     )
 
-    record = subparsers.add_parser("record", help="record a session into a new runbook")
-    record.add_argument("title", help="title for the new runbook")
-    record.add_argument("--host", metavar="ALIAS", help="record over ssh instead of locally")
+    record_parser = subparsers.add_parser("record", help="record a session into a new runbook")
+    record_parser.add_argument("title", help="title for the new runbook")
+    record_parser.add_argument(
+        "-o",
+        "--output",
+        required=True,
+        type=Path,
+        metavar="PATH",
+        help="path of the runbook YAML file to write",
+    )
+    record_parser.add_argument("--host", metavar="ALIAS", help="record over ssh instead of locally")
 
     return parser
 
@@ -76,6 +85,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command is None:
         parser.print_help()
         return 0
+    if args.command == "record":
+        try:
+            return record(args.title, args.output, args.host)
+        except (RunbookError, OSError) as exc:
+            print(f"rbk record: {exc}", file=sys.stderr)
+            return 1
     return _not_implemented(args.command)
 
 

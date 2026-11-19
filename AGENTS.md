@@ -21,6 +21,7 @@ Guidance for agents and contributors working in this repository.
 | :--- | :--- |
 | `src/rbk/cli.py` | Argument parsing and command dispatch. |
 | `src/rbk/runbook.py` | YAML loading/validation, `{{ }}` interpolation, include resolution. |
+| `src/rbk/recorder.py` | Interactive session capture, per-command triage, YAML writing. |
 | `src/rbk/__init__.py` | Version string. |
 | `tests/` | Pytest suite; CLI smoke tests live here. |
 | `Formula/rbk.rb` | Homebrew tap formula (tap: `J-Schiemer/homebrew-tap`). |

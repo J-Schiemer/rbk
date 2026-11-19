@@ -77,7 +77,7 @@ rbk list                     # top-level runbooks (helper _fragments hidden)
 rbk run update-immich        # execute it
 rbk run update-immich --dry-run
 rbk run update-immich --var host=nuc
-rbk record "Rotate TLS certs" --host web-01   # capture a session as a runbook
+rbk record "Rotate TLS certs" --output runbooks/rotate-tls.yaml --host web-01  # capture a session as a runbook
 ```
 
 Workspace discovery will walk up from `$PWD` looking for a `runbooks/` directory, the way `git` looks for `.git/`. Override with `--dir <path>` or `RBK_DIR`.
@@ -90,15 +90,15 @@ Workspace discovery will walk up from `$PWD` looking for a `runbooks/` directory
 | `rbk run <name>` | Execute `runbooks/<name>.yaml` (`.yaml` suffix optional). |
 | `rbk run <name> --dry-run` | Resolve includes and variables, print the plan only. |
 | `rbk run <name> --var k=v` | Override a variable at runtime (repeatable). |
-| `rbk record "<title>"` | Record a local shell session into a new runbook. |
-| `rbk record "<title>" --host <alias>` | Record a remote `ssh -t` session into a new runbook. |
+| `rbk record "<title>" --output <path>` | Record a local shell session into the given runbook path. |
+| `rbk record "<title>" --output <path> --host <alias>` | Record a remote `ssh -t` session into the given runbook path. |
 | `rbk --version` | Print the version. |
 
 Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plain SSH destination (`[user@]host[:port]`) resolved by your usual OpenSSH config. Variables resolve `{{ name }}` from CLI `--var`, then variables selected by the caller (parent runbook `vars` + `include` vars), then runbook `vars`. Secrets stay out of Git via `{{ env.VAR_NAME }}`.
 
 ## Status
 
-This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`. The execution engine, recorder, and workspace discovery are not implemented yet. Unimplemented subcommands exit non-zero with a clear message.
+This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`, and the interactive session recorder in `src/rbk/recorder.py`. The execution engine, `rbk list`, and workspace discovery are not implemented yet. Unimplemented subcommands exit non-zero with a clear message.
 
 ## Contributing
 
