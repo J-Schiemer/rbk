@@ -16,13 +16,11 @@ class Rbk < Formula
     ENV["UV_TOOL_DIR"] = libexec/"uv-tools"
     ENV["UV_TOOL_BIN_DIR"] = libexec/"bin"
 
-    system "uv", "tool", "install", "--python", which_python, "--force", "."
+    system "uv", "tool", "install",
+           "--python", formula_opt_bin("python@3.12")/"python3.12",
+           "--force", "."
 
     bin.install_symlink libexec/"bin/rbk"
-  end
-
-  def which_python
-    Formula["python@3.12"].opt_bin/"python3.12"
   end
 
   test do
