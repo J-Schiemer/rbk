@@ -7,6 +7,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -16,21 +20,28 @@ jobs:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v5
 
+      - name: Sync (locked)
+        run: uv sync --locked
+
       - name: Verify version matches tag
         run: |
+          if [[ ! "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "tag $GITHUB_REF_NAME is not a vX.Y.Z release tag" >&2
+            exit 1
+          fi
           tag="${GITHUB_REF_NAME#v}"
-          version=$(uv run python -c "import rbk; print(rbk.__version__)")
-          if [ "$tag" != "$version" ]; then
-            echo "tag $tag does not match rbk.__version__ $version" >&2
+          version=$(uv run --no-sync python -c "import rbk; print(rbk.__version__)")
+          project=$(uv run --no-sync python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          if [ "$tag" != "$version" ] || [ "$tag" != "$project" ]; then
+            echo "tag $tag != rbk.__version__ $version / pyproject $project" >&2
             exit 1
           fi
 
       - name: Test and lint
         run: |
-          uv sync --locked
-          uv run ruff check .
-          uv run ruff format --check .
-          uv run pytest -q
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+          uv run --no-sync pytest -q
 
       - name: Build
         run: uv build
@@ -39,9 +50,13 @@ jobs:
         id: sha
         run: |
           url="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${GITHUB_REF_NAME}.tar.gz"
-          curl -fsSL "$url" -o source.tar.gz
-          sha=$(shasum -a 256 source.tar.gz | cut -d' ' -f1)
-          echo "sha256=$sha" >> "$GITHUB_OUTPUT"
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            if curl -fsSL "$url" -o source.tar.gz; then break; fi
+            echo "tag archive not ready (attempt $i), retrying" >&2
+            sleep 3
+          done
+          test -s source.tar.gz
+          echo "sha256=$(sha256sum source.tar.gz | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       - name: Publish GitHub release
@@ -59,18 +74,18 @@ jobs:
           TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
           git clone "https://x-access-token:${TAP_TOKEN}@github.com/J-Schiemer/homebrew-tap.git" tap
-          sed -i -E \
+          mkdir -p tap/Formula
+          sed -E \
             -e "s|^  url \".*\"$|  url \"${URL}\"|" \
             -e "s|^  sha256 \".*\"$|  sha256 \"${SHA256}\"|" \
-            Formula/rbk.rb
-          cp Formula/rbk.rb tap/Formula/rbk.rb
+            Formula/rbk.rb > tap/Formula/rbk.rb
           cd tap
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet; then
+          git add Formula/rbk.rb
+          if git diff --cached --quiet; then
             echo "formula already up to date"
             exit 0
           fi
-          git add Formula/rbk.rb
           git commit -m "chore: bump rbk to ${GITHUB_REF_NAME}"
           git push

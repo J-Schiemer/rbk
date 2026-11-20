@@ -58,7 +58,7 @@ Run `ruff check`, `ruff format --check`, and `pytest` before considering work do
 2. Tag it: `git tag v0.1.0 && git push origin v0.1.0`.
 3. `release.yml` verifies the tag matches `rbk.__version__`, builds, publishes the GitHub release, and pushes the updated formula to the `J-Schiemer/homebrew-tap` repository.
 
-The tap push requires a `HOMEBREW_TAP_TOKEN` repository secret with write access to the tap, and the tap repo must already contain `Formula/rbk.rb`. The first release must be tagged `v0.1.0`.
+The tap push requires a `HOMEBREW_TAP_TOKEN` secret: a fine-grained PAT scoped to `homebrew-tap` only with `Contents: read and write`. The workflow creates `Formula/rbk.rb` in the tap on the first release, so the tap needs no manual bootstrap. The first release must be tagged `v0.1.0`.
 
 ## Spec and local docs
 

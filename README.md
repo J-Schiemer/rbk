@@ -18,19 +18,17 @@ Configuration management tools are excellent at declarative state convergence ac
 
 ## Installation
 
-Until the first tagged release, run it from a checkout:
+```sh
+brew install J-Schiemer/tap/rbk                        # Homebrew (macOS / Linux)
+uv tool install git+https://github.com/J-Schiemer/rbk   # or via uv
+```
+
+To hack on `rbk`, run it from a checkout:
 
 ```sh
 git clone https://github.com/J-Schiemer/rbk
 cd rbk
 uv run rbk --version
-```
-
-Once released, the planned install paths are:
-
-```sh
-brew tap J-Schiemer/tap && brew install rbk   # Homebrew
-uv tool install git+https://github.com/J-Schiemer/rbk
 ```
 
 ## Quickstart

@@ -1,5 +1,10 @@
+import tomllib
+from pathlib import Path
+
 import rbk
 from rbk.cli import main
+
+PYPROJECT = Path(__file__).resolve().parents[1] / "pyproject.toml"
 
 
 def make_workspace(tmp_path):
@@ -24,7 +29,8 @@ def test_version_flag_prints_version(capsys):
 
 
 def test_package_version_matches_pyproject():
-    assert rbk.__version__ == "0.1.0"
+    project = tomllib.loads(PYPROJECT.read_text(encoding="utf-8"))
+    assert rbk.__version__ == project["project"]["version"]
 
 
 def test_run_dry_run_prints_plan(tmp_path, capsys):

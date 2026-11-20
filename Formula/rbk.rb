@@ -1,6 +1,9 @@
 class Rbk < Formula
   desc "Lightweight, Git-native CLI runbook runner over plain OpenSSH"
   homepage "https://github.com/J-Schiemer/rbk"
+  # url and sha256 are rendered by .github/workflows/release.yml into the
+  # J-Schiemer/homebrew-tap repository on every v* tag; the values here are
+  # the local template and are never published as-is.
   url "https://github.com/J-Schiemer/rbk/archive/refs/tags/v0.1.0.tar.gz"
   sha256 "0000000000000000000000000000000000000000000000000000000000000000"
   license "MIT"
