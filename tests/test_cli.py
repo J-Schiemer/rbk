@@ -27,9 +27,21 @@ def test_package_version_matches_pyproject():
     assert rbk.__version__ == "0.1.0"
 
 
-def test_run_without_implementation_exits_nonzero(capsys):
-    assert main(["run", "thing"]) == 2
-    assert "not implemented yet" in capsys.readouterr().err
+def test_run_dry_run_prints_plan(tmp_path, capsys):
+    root = make_workspace(tmp_path)
+
+    assert main(["--dir", str(root), "run", "update-immich", "--dry-run"]) == 0
+
+    out = capsys.readouterr().out
+    assert "Plan for update-immich" in out
+    assert not (root / ".rbk-history.jsonl").exists()
+
+
+def test_run_missing_runbook_errors(tmp_path, capsys):
+    root = make_workspace(tmp_path)
+
+    assert main(["--dir", str(root), "run", "nope"]) == 1
+    assert capsys.readouterr().err.startswith("rbk run:")
 
 
 def test_no_subcommand_prints_help(capsys):

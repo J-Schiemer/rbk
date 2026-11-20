@@ -1,8 +1,8 @@
 """rbk command-line interface.
 
 This module owns argument parsing and dispatch only. Workspace discovery lives
-in ``rbk.workspace``, the execution engine is not implemented yet, and the
-interactive recorder lives in ``rbk.recorder``.
+in ``rbk.workspace``, the execution engine in ``rbk.executor``, and the
+interactive recorder in ``rbk.recorder``.
 
 * ``rbk list``   — top-level runbooks, hiding ``_``-prefixed fragments
 * ``rbk run``    — resolve includes/vars, then stream commands locally or over SSH
@@ -20,14 +20,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from rbk import __version__
+from rbk.executor import execute
 from rbk.recorder import record
 from rbk.runbook import RunbookError, list_runbooks
 from rbk.workspace import find_workspace
-
-
-def _not_implemented(command: str) -> int:
-    print(f"rbk {command}: not implemented yet", file=sys.stderr)
-    return 2
 
 
 def _cmd_list(args: argparse.Namespace) -> int:
@@ -47,6 +43,19 @@ def _cmd_list(args: argparse.Namespace) -> int:
         description = f" — {runbook.description}" if runbook.description else ""
         print(f"{runbook.path.stem:<{width}}  {runbook.name}{description}")
     return 0
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    try:
+        return execute(
+            args.name,
+            find_workspace(args.dir),
+            cli_vars=dict(args.vars),
+            dry_run=args.dry_run,
+        )
+    except RunbookError as exc:
+        print(f"rbk run: {exc}", file=sys.stderr)
+        return 1
 
 
 def _cmd_record(args: argparse.Namespace) -> int:
@@ -115,9 +124,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "list":
         return _cmd_list(args)
-    if args.command == "record":
-        return _cmd_record(args)
-    return _not_implemented(args.command)
+    if args.command == "run":
+        return _cmd_run(args)
+    return _cmd_record(args)
 
 
 if __name__ == "__main__":

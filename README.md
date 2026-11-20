@@ -35,7 +35,7 @@ uv tool install git+https://github.com/J-Schiemer/rbk
 
 ## Quickstart
 
-The target workflow once the engine lands. Right now `rbk list` and `rbk record` work; `rbk run` exits with "not implemented yet" — see [Status](#status).
+The target workflow. `rbk list`, `rbk run`, and `rbk record` are implemented.
 
 Create a runbook workspace anywhere:
 
@@ -98,7 +98,7 @@ Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plai
 
 ## Status
 
-This repository is a skeleton: the CLI surface, packaging, and CI are in place, along with the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) in `src/rbk/runbook.py`, the interactive session recorder in `src/rbk/recorder.py`, and workspace discovery (`--dir`, `$RBK_DIR`, upward walk) plus `rbk list` in `src/rbk/workspace.py` and `src/rbk/cli.py`. The execution engine is not implemented yet, so `rbk run` exits non-zero with a clear message.
+This repository is a working tool: the CLI surface and packaging are in place, the core YAML layer (loading, schema validation, `{{ }}` interpolation, and `include` resolution with cycle detection) lives in `src/rbk/runbook.py`, workspace discovery (`--dir`, `$RBK_DIR`, upward walk) and `rbk list` in `src/rbk/workspace.py` and `src/rbk/cli.py`, and the execution engine in `src/rbk/executor.py`. `rbk run` executes steps locally via `sh` or over `ssh` with connection multiplexing, streams output live, aborts on the first failure while propagating its exit code, and appends an audit entry to `.rbk-history.jsonl`. The interactive session recorder is in `src/rbk/recorder.py`.
 
 ## Contributing
 
