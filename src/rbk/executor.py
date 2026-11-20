@@ -11,7 +11,7 @@ from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
-from rbk.runbook import PlanStep, resolve_plan
+from rbk.runbook import PlanStep, RunbookError, resolve_plan
 
 SSH_OPTIONS = (
     "-o",
@@ -94,6 +94,8 @@ def execute(
     *,
     cli_vars: Mapping[str, str] | None = None,
     dry_run: bool = False,
+    assume_yes: bool = False,
+    interactive: bool | None = None,
     input_fn: Callable[[str], str] = input,
     print_fn: Callable[..., None] = print,
 ) -> int:
@@ -102,6 +104,15 @@ def execute(
     if dry_run:
         print_fn(_format_plan(entry, plan))
         return 0
+
+    if interactive is None:
+        interactive = sys.stdin.isatty()
+    if not assume_yes and not interactive and any(step.confirm for step in plan):
+        need = ", ".join(step.name for step in plan if step.confirm)
+        raise RunbookError(
+            f"runbook requires confirmation for {need}, but stdin is not a terminal; "
+            "re-run with --yes to approve non-interactively"
+        )
 
     started = time.monotonic()
     status = "success"
@@ -114,7 +125,7 @@ def execute(
             current = step.name
             target = f" -> {step.host}" if step.host else ""
             print_fn(f"[{index}/{len(plan)}] {step.name}{target}", flush=True)
-            if step.confirm:
+            if step.confirm and not assume_yes:
                 answer = input_fn(f"{step.name}: run? [y/N] ").strip().lower()
                 if answer not in {"y", "yes"}:
                     print_fn(f"Aborted at '{step.name}'.", flush=True)

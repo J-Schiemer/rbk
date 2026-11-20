@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 import shlex
 import shutil
 import subprocess
@@ -28,6 +29,14 @@ def _represent_str(dumper: yaml.SafeDumper, data: str) -> yaml.ScalarNode:
 
 
 _LiteralDumper.add_representer(str, _represent_str)
+
+
+def slugify(title: str) -> str:
+    """Derive a runbook filename stem from a title, raising if nothing remains."""
+    slug = re.sub(r"[^a-z0-9]+", "-", title.strip().lower()).strip("-")
+    if not slug:
+        raise RunbookError(f"cannot derive a runbook filename from title {title!r}")
+    return slug
 
 
 def record(

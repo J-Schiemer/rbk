@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from rbk.executor import execute
+from rbk.runbook import RunbookError
 
 
 @pytest.fixture
@@ -77,7 +78,7 @@ def test_confirm_declined_aborts(workspace):
         f"name: Demo\nsteps:\n  - name: Touch\n    confirm: true\n    run: touch '{marker}'\n",
     )
 
-    assert execute("demo", workspace / "runbooks", input_fn=lambda _: "") == 1
+    assert execute("demo", workspace / "runbooks", interactive=True, input_fn=lambda _: "") == 1
 
     assert not marker.exists()
     [entry] = history(workspace)
@@ -93,10 +94,66 @@ def test_confirm_accepted_runs_step(workspace):
         f"name: Demo\nsteps:\n  - name: Touch\n    confirm: true\n    run: touch '{marker}'\n",
     )
 
-    assert execute("demo", workspace / "runbooks", input_fn=lambda _: "y") == 0
+    assert execute("demo", workspace / "runbooks", interactive=True, input_fn=lambda _: "y") == 0
 
     assert marker.exists()
     assert history(workspace)[0]["status"] == "success"
+
+
+def test_non_interactive_confirm_fails_before_any_step(workspace):
+    marker = workspace / "marker"
+    write(
+        workspace,
+        "demo",
+        f"name: Demo\nsteps:\n  - name: Touch\n    confirm: true\n    run: touch '{marker}'\n",
+    )
+
+    with pytest.raises(RunbookError, match="--yes"):
+        execute("demo", workspace / "runbooks", interactive=False)
+
+    assert not marker.exists()
+    assert not (workspace / ".rbk-history.jsonl").exists()
+
+
+def test_assume_yes_skips_prompt(workspace):
+    marker = workspace / "marker"
+    write(
+        workspace,
+        "demo",
+        f"name: Demo\nsteps:\n  - name: Touch\n    confirm: true\n    run: touch '{marker}'\n",
+    )
+
+    assert execute("demo", workspace / "runbooks", interactive=False, assume_yes=True) == 0
+
+    assert marker.exists()
+    assert history(workspace)[0]["status"] == "success"
+
+
+def test_dry_run_is_allowed_when_not_interactive(workspace, capsys):
+    write(
+        workspace,
+        "demo",
+        "name: Demo\nsteps:\n  - name: Touch\n    confirm: true\n    run: 'true'\n",
+    )
+
+    assert execute("demo", workspace / "runbooks", dry_run=True, interactive=False) == 0
+
+    assert "Plan for demo (1 step)" in capsys.readouterr().out
+    assert not (workspace / ".rbk-history.jsonl").exists()
+
+
+def test_assume_yes_does_not_change_failure_propagation(workspace):
+    write(
+        workspace,
+        "demo",
+        "name: Demo\nsteps:\n  - name: Boom\n    confirm: true\n    run: exit 5\n",
+    )
+
+    assert execute("demo", workspace / "runbooks", interactive=False, assume_yes=True) == 5
+
+    [entry] = history(workspace)
+    assert entry["status"] == "failed"
+    assert entry["failing_step"] == "Boom"
 
 
 def test_history_is_append_only(workspace):

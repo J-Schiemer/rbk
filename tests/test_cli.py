@@ -44,6 +44,23 @@ def test_run_missing_runbook_errors(tmp_path, capsys):
     assert capsys.readouterr().err.startswith("rbk run:")
 
 
+def test_run_forwards_assume_yes_flag(tmp_path, monkeypatch):
+    root = make_workspace(tmp_path)
+    calls = []
+
+    def fake_execute(name, runbooks_dir, **kwargs):
+        calls.append(kwargs)
+        return 0
+
+    monkeypatch.setattr("rbk.cli.execute", fake_execute)
+
+    assert main(["--dir", str(root), "run", "second", "--yes"]) == 0
+    assert main(["--dir", str(root), "run", "second"]) == 0
+
+    assert calls[0]["assume_yes"] is True
+    assert calls[1]["assume_yes"] is False
+
+
 def test_no_subcommand_prints_help(capsys):
     assert main([]) == 0
     assert "usage: rbk" in capsys.readouterr().out

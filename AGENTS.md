@@ -49,6 +49,7 @@ Run `ruff check`, `ruff format --check`, and `pytest` before considering work do
 - **SSH multiplexing is mandatory** for multi-step runs: pass `ControlMaster=auto`, `ControlPath=/tmp/rbk-%r@%h:%p`, `ControlPersist=60`.
 - **Includes must detect cycles** by tracking the active call stack and aborting with a clear error.
 - **Never write secrets into runbooks.** Resolve them at runtime via `{{ env.VAR_NAME }}`.
+- **`confirm` steps need a terminal.** Non-interactive runs must pass `--yes` or `rbk run` aborts before executing anything.
 - **The audit log is append-only.** `.rbk-history.jsonl` is gitignored; entries are one JSON object per line with ISO-8601 timestamp, runbook, hosts, duration, status, and failing step. Do not break that shape.
 - **Variable interpolation** uses `{{ name }}`; precedence is CLI `--var` > variables selected by the caller (parent runbook `vars` + `include` vars) > the runbook's own `vars`. There is no inventory file.
 

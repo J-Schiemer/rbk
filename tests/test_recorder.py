@@ -14,6 +14,7 @@ from rbk.recorder import (
     _triage,
     _write_yaml,
     record,
+    slugify,
 )
 from rbk.runbook import RunbookError, Step, load_runbook
 
@@ -168,7 +169,37 @@ def test_cli_record_dispatches(tmp_path, monkeypatch):
     assert called == {"title": "My Title", "output": tmp_path / "r.yaml", "host": None}
 
 
-def test_cli_record_requires_output():
-    with pytest.raises(SystemExit) as exc:
-        main(["record", "My Title"])
-    assert exc.value.code != 0
+def test_cli_record_defaults_output_into_runbooks(tmp_path, monkeypatch):
+    root = tmp_path / "ws"
+    (root / "runbooks").mkdir(parents=True)
+    called = {}
+
+    def fake_record(title, output, host):
+        called.update(title=title, output=output, host=host)
+        return 0
+
+    monkeypatch.setattr("rbk.cli.record", fake_record)
+    assert main(["--dir", str(root), "record", "Rotate TLS Certs"]) == 0
+    assert called == {
+        "title": "Rotate TLS Certs",
+        "output": root / "runbooks" / "rotate-tls-certs.yaml",
+        "host": None,
+    }
+
+
+@pytest.mark.parametrize(
+    ("title", "expected"),
+    [
+        ("Rotate TLS Certs", "rotate-tls-certs"),
+        ("  Update Immich! ", "update-immich"),
+        ("a//b", "a-b"),
+        ("42", "42"),
+    ],
+)
+def test_slugify(title, expected):
+    assert slugify(title) == expected
+
+
+def test_slugify_empty_title_raises():
+    with pytest.raises(RunbookError, match="filename"):
+        slugify("!!!")

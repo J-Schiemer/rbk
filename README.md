@@ -90,11 +90,12 @@ Workspace discovery will walk up from `$PWD` looking for a `runbooks/` directory
 | `rbk run <name>` | Execute `runbooks/<name>.yaml` (`.yaml` suffix optional). |
 | `rbk run <name> --dry-run` | Resolve includes and variables, print the plan only. |
 | `rbk run <name> --var k=v` | Override a variable at runtime (repeatable). |
-| `rbk record "<title>" --output <path>` | Record a local shell session into the given runbook path. |
+| `rbk run <name> --yes` | Approve all `confirm` steps without prompting (for scripted runs). |
+| `rbk record "<title>" --output <path>` | Record a local shell session into a runbook (path defaults to `runbooks/<slug>.yaml`). |
 | `rbk record "<title>" --output <path> --host <alias>` | Record a remote `ssh -t` session into the given runbook path. |
 | `rbk --version` | Print the version. |
 
-Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plain SSH destination (`[user@]host[:port]`) resolved by your usual OpenSSH config. Variables resolve `{{ name }}` from CLI `--var`, then variables selected by the caller (parent runbook `vars` + `include` vars), then runbook `vars`. Secrets stay out of Git via `{{ env.VAR_NAME }}`.
+Step keys: `name`, `run`, `host`, `include`, `vars`, `confirm`. `host` is a plain SSH destination (`[user@]host[:port]`) resolved by your usual OpenSSH config. Variables resolve `{{ name }}` from CLI `--var`, then variables selected by the caller (parent runbook `vars` + `include` vars), then runbook `vars`. Secrets stay out of Git via `{{ env.VAR_NAME }}`. `--output` is optional and defaults to `runbooks/<slugified-title>.yaml`. A `confirm` step needs a terminal; non-interactive runs must pass `--yes` or `rbk` aborts before executing anything.
 
 ## Status
 

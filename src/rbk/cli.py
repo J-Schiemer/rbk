@@ -21,7 +21,7 @@ from pathlib import Path
 
 from rbk import __version__
 from rbk.executor import execute
-from rbk.recorder import record
+from rbk.recorder import record, slugify
 from rbk.runbook import RunbookError, list_runbooks
 from rbk.workspace import find_workspace
 
@@ -52,6 +52,7 @@ def _cmd_run(args: argparse.Namespace) -> int:
             find_workspace(args.dir),
             cli_vars=dict(args.vars),
             dry_run=args.dry_run,
+            assume_yes=args.assume_yes,
         )
     except RunbookError as exc:
         print(f"rbk run: {exc}", file=sys.stderr)
@@ -60,7 +61,10 @@ def _cmd_run(args: argparse.Namespace) -> int:
 
 def _cmd_record(args: argparse.Namespace) -> int:
     try:
-        return record(args.title, args.output, args.host)
+        output = args.output
+        if output is None:
+            output = find_workspace(args.dir) / f"{slugify(args.title)}.yaml"
+        return record(args.title, output, args.host)
     except (RunbookError, OSError) as exc:
         print(f"rbk record: {exc}", file=sys.stderr)
         return 1
@@ -92,6 +96,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("name", help="runbook name, with or without the .yaml suffix")
     run.add_argument("--dry-run", action="store_true", help="print the plan, run nothing")
     run.add_argument(
+        "-y",
+        "--yes",
+        dest="assume_yes",
+        action="store_true",
+        help="approve confirm prompts without asking (for scripted runs)",
+    )
+    run.add_argument(
         "--var",
         dest="vars",
         action="append",
@@ -106,10 +117,9 @@ def build_parser() -> argparse.ArgumentParser:
     record_parser.add_argument(
         "-o",
         "--output",
-        required=True,
         type=Path,
         metavar="PATH",
-        help="path of the runbook YAML file to write",
+        help="path of the runbook YAML file to write (default: runbooks/<slug>.yaml)",
     )
     record_parser.add_argument("--host", metavar="ALIAS", help="record over ssh instead of locally")
 
