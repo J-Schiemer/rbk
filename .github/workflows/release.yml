@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   release:
@@ -30,6 +29,7 @@ jobs:
         run: |
           uv sync --locked
           uv run ruff check .
+          uv run ruff format --check .
           uv run pytest -q
 
       - name: Build
@@ -52,25 +52,25 @@ jobs:
             --title "rbk $GITHUB_REF_NAME" \
             --generate-notes
 
-      - name: Update Homebrew formula
+      - name: Update Homebrew formula in tap
         env:
           SHA256: ${{ steps.sha.outputs.sha256 }}
           URL: ${{ steps.sha.outputs.url }}
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
         run: |
-          sed -i.bak -E \
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/J-Schiemer/homebrew-tap.git" tap
+          sed -i -E \
             -e "s|^  url \".*\"$|  url \"${URL}\"|" \
             -e "s|^  sha256 \".*\"$|  sha256 \"${SHA256}\"|" \
             Formula/rbk.rb
-          rm -f Formula/rbk.rb.bak
-
-      - name: Open formula bump PR
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "chore: bump Homebrew formula to ${{ github.ref_name }}"
-          title: "chore: bump Homebrew formula to ${{ github.ref_name }}"
-          branch: formula/${{ github.ref_name }}
-          body: |
-            Automated formula bump for `${{ github.ref_name }}`.
-
-            - url: ${{ steps.sha.outputs.url }}
-            - sha256: `${{ steps.sha.outputs.sha256 }}`
+          cp Formula/rbk.rb tap/Formula/rbk.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "formula already up to date"
+            exit 0
+          fi
+          git add Formula/rbk.rb
+          git commit -m "chore: bump rbk to ${GITHUB_REF_NAME}"
+          git push

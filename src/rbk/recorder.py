@@ -153,8 +153,12 @@ def _triage(
                 continue
             if choice == "e":
                 command = input_fn("command> ").strip() or command
+                default_name = _step_name(command)
+                name = input_fn(f"name [{default_name}]> ").strip() or default_name
+            else:
+                name = _step_name(command)
             if command.strip():
-                steps.append(Step(name=_step_name(command), run=command))
+                steps.append(Step(name=name, run=command))
     except (EOFError, KeyboardInterrupt):
         print_fn("")
     return steps

@@ -166,12 +166,15 @@ def interpolate(text: str, variables: Mapping[str, str]) -> str:
 
 
 def _runbook_path(runbooks_dir: Path, entry: str) -> Path:
-    filename = entry if entry.endswith((".yaml", ".yml")) else f"{entry}.yaml"
     root = runbooks_dir.resolve()
-    candidate = (root / filename).resolve()
-    if root not in candidate.parents:
-        raise RunbookError(f"include path escapes runbooks directory: {entry}")
-    return candidate
+    names = [entry] if entry.endswith((".yaml", ".yml")) else [f"{entry}.yaml", f"{entry}.yml"]
+    for name in names:
+        candidate = (root / name).resolve()
+        if root not in candidate.parents:
+            raise RunbookError(f"include path escapes runbooks directory: {entry}")
+        if candidate.is_file():
+            return candidate
+    return (root / names[0]).resolve()
 
 
 def resolve_plan(

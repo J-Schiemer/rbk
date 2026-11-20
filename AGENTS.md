@@ -9,7 +9,6 @@ Guidance for agents and contributors working in this repository.
 ## Non-negotiable constraints
 
 - **Python 3.11+**, standard library plus exactly one dependency: `pyyaml`. Adding any other runtime dependency requires explicit approval.
-- **Core codebase budget ≈250 lines of Python.** Prefer deleting code over abstracting it.
 - **No agents or runtimes on target hosts.** Remote steps assume only POSIX `sh`/`bash` and OpenSSH.
 - **No YAML control-flow DSL.** No `when:`, `loop:`, `register:`, or conditional expressions. Loops and branches belong inside embedded shell blocks.
 - **No daemon, web UI, or state convergence engine.** Synchronous single-user CLI only.
@@ -27,7 +26,7 @@ Guidance for agents and contributors working in this repository.
 | `src/rbk/__init__.py` | Version string. |
 | `tests/` | Pytest suite; CLI smoke tests live here. |
 | `Formula/rbk.rb` | Homebrew tap formula (tap: `J-Schiemer/homebrew-tap`). |
-| `.github/workflows/` | `ci.yml` (lint + test) and `release.yml` (tag → release → formula bump). |
+| `.github/workflows/` | `ci.yml` (lint + test) and `release.yml` (tag → release → Homebrew tap bump). |
 
 ## Commands
 
@@ -52,6 +51,14 @@ Run `ruff check`, `ruff format --check`, and `pytest` before considering work do
 - **`confirm` steps need a terminal.** Non-interactive runs must pass `--yes` or `rbk run` aborts before executing anything.
 - **The audit log is append-only.** `.rbk-history.jsonl` is gitignored; entries are one JSON object per line with ISO-8601 timestamp, runbook, hosts, duration, status, and failing step. Do not break that shape.
 - **Variable interpolation** uses `{{ name }}`; precedence is CLI `--var` > variables selected by the caller (parent runbook `vars` + `include` vars) > the runbook's own `vars`. There is no inventory file.
+
+## Releasing
+
+1. Set `__version__` in `src/rbk/__init__.py` and `version` in `pyproject.toml` to the release version.
+2. Tag it: `git tag v0.1.0 && git push origin v0.1.0`.
+3. `release.yml` verifies the tag matches `rbk.__version__`, builds, publishes the GitHub release, and pushes the updated formula to the `J-Schiemer/homebrew-tap` repository.
+
+The tap push requires a `HOMEBREW_TAP_TOKEN` repository secret with write access to the tap, and the tap repo must already contain `Formula/rbk.rb`. The first release must be tagged `v0.1.0`.
 
 ## Spec and local docs
 

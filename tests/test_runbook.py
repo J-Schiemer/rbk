@@ -240,6 +240,33 @@ def test_nested_includes_inherit_vars(runbooks):
     assert resolve_plan("main", runbooks)[0].command == "echo 1-2"
 
 
+def test_include_resolves_yml_fragment_without_suffix(runbooks):
+    write(
+        runbooks,
+        "main",
+        "name: Main\nsteps:\n  - name: helper\n    include: _helper\n",
+    )
+    (runbooks / "_helper.yml").write_text(
+        "name: Helper\nsteps:\n  - name: inner\n    run: echo inner\n", encoding="utf-8"
+    )
+    assert [step.name for step in resolve_plan("main", runbooks)] == ["inner"]
+
+
+def test_resolve_plan_finds_yml_when_no_yaml_exists(runbooks):
+    (runbooks / "onlyyml.yml").write_text(
+        "name: Only\nsteps:\n  - name: show\n    run: echo yml\n", encoding="utf-8"
+    )
+    assert resolve_plan("onlyyml", runbooks)[0].command == "echo yml"
+
+
+def test_resolve_plan_prefers_yaml_over_yml(runbooks):
+    write(runbooks, "both", "name: Main\nsteps:\n  - name: fromyaml\n    run: echo yaml\n")
+    (runbooks / "both.yml").write_text(
+        "name: Main\nsteps:\n  - name: fromyml\n    run: echo yml\n", encoding="utf-8"
+    )
+    assert resolve_plan("both", runbooks)[0].name == "fromyaml"
+
+
 def test_cycle_is_detected(runbooks):
     write(runbooks, "a", "name: A\nsteps:\n  - name: inc\n    include: b\n")
     write(runbooks, "b", "name: B\nsteps:\n  - name: inc\n    include: a\n")

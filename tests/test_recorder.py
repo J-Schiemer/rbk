@@ -35,10 +35,17 @@ def test_parse_history_drops_blanks_and_consecutive_duplicates():
 
 def test_triage_keeps_by_default_and_discards_on_n():
     commands = ["echo keep", "echo drop", "echo edit me"]
-    inputs = feed("", "n", "e", "echo edited")
+    inputs = feed("", "n", "e", "echo edited", "")
     steps = _triage(commands, input_fn=inputs, print_fn=quiet)
     assert [step.run for step in steps] == ["echo keep", "echo edited"]
     assert [step.name for step in steps] == ["echo keep", "echo edited"]
+
+
+def test_triage_edit_can_customize_step_name():
+    inputs = feed("e", "echo edited", "Custom Name")
+    steps = _triage(["echo original"], input_fn=inputs, print_fn=quiet)
+    assert steps[0].run == "echo edited"
+    assert steps[0].name == "Custom Name"
 
 
 def test_triage_stops_gracefully_on_eof():
